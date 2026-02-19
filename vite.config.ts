@@ -4,10 +4,19 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    const allowedHosts = [
+      'anistream-ai.onrender.com',
+      env.RENDER_EXTERNAL_HOSTNAME,
+    ].filter(Boolean);
+
     return {
       server: {
         port: 3000,
         host: '0.0.0.0',
+      },
+      preview: {
+        host: '0.0.0.0',
+        allowedHosts,
       },
       plugins: [react()],
       define: {
