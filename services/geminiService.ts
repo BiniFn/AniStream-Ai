@@ -2,9 +2,11 @@ import { GoogleGenAI } from "@google/genai";
 
 let ai: GoogleGenAI | null = null;
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY;
+
 const getAI = () => {
-  if (!ai && process.env.API_KEY) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  if (!ai && GEMINI_API_KEY) {
+    ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
   }
   return ai;
 };

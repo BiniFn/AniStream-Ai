@@ -213,7 +213,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ sources, subtitles, intro, ou
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  if (!sources && !poster) return null;
+  const hasSources = Array.isArray(sources) && sources.length > 0;
+
+  if (!hasSources && !poster) return null;
 
   return (
     <div 
@@ -221,7 +223,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ sources, subtitles, intro, ou
       className="relative w-full aspect-video bg-black rounded-xl overflow-hidden group shadow-2xl ring-1 ring-white/10"
       onMouseLeave={() => setShowSettings(false)}
     >
-      {!sources ? (
+      {!hasSources ? (
         // Placeholder state
         <div className="absolute inset-0 flex items-center justify-center">
             <img src={poster} className="absolute inset-0 w-full h-full object-cover opacity-30" />
