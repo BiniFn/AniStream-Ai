@@ -13,15 +13,30 @@ const Search: React.FC = () => {
   
   const [results, setResults] = useState<Anime[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (query) {
-      setLoading(true);
-      searchAnime(query).then(data => {
-        setResults(data);
+    if (!query.trim()) {
+      setResults([]);
+      setError('');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    searchAnime(query)
+      .then(data => {
+        setResults(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error('Search request failed:', err);
+        setError('Unable to load search results right now. Please try again.');
+      })
+      .finally(() => {
         setLoading(false);
       });
-    }
   }, [query]);
 
   return (
@@ -40,7 +55,15 @@ const Search: React.FC = () => {
            </div>
         ) : (
           <>
-            {results.length > 0 ? (
+            {error ? (
+              <div className="text-center py-20">
+                <p className="text-xl text-red-300">{error}</p>
+              </div>
+            ) : !query.trim() ? (
+              <div className="text-center py-20">
+                <p className="text-xl text-gray-400">Start by searching for an anime title.</p>
+              </div>
+            ) : results.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {results.map(anime => (
                   <AnimeCard key={anime.mal_id} anime={anime} />
