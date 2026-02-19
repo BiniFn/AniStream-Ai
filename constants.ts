@@ -3,18 +3,26 @@ import { AudioType, StreamServer } from "./types";
 export const APP_NAME = "AniStream";
 export const JIKAN_API_BASE = "https://api.jikan.moe/v4";
 
-// List of available API nodes for ghoshRitesh12/aniwatch-api
-// We use CORS proxies (corsproxy.io) to avoid "Failed to fetch" errors in the browser
-export const STREAM_API_NODES = [
-  // Primary: Render instance (reliable but slow start) via Proxy
-  "https://corsproxy.io/?https://aniwatch-api-v1-0.onrender.com/api/v2/hianime",
-  // Secondary: Vercel instances via Proxy
-  "https://corsproxy.io/?https://aniwatch-api-net.vercel.app/api/v2/hianime",
-  "https://corsproxy.io/?https://hianime-api-chi.vercel.app/api/v2/hianime",
-  "https://corsproxy.io/?https://api-aniwatch.onrender.com/api/v2/hianime",
-  // Fallback: Direct (might work if server enables CORS)
-  "https://aniwatch-api-v1-0.onrender.com/api/v2/hianime"
-]; 
+// Stream API nodes are configurable so this frontend can be wired to any
+// compatible AniWatch/Hianime backend (including self-hosted forks).
+//
+// Example .env value:
+// VITE_STREAM_API_NODES=https://my-api.example.com/api/v2/hianime,https://fallback.example.com/api/v2/hianime
+//
+// If no env value is provided, we keep a conservative fallback list.
+const envNodes = (import.meta.env.VITE_STREAM_API_NODES || "")
+  .split(",")
+  .map((node: string) => node.trim())
+  .filter(Boolean);
+
+export const STREAM_API_NODES = envNodes.length > 0
+  ? envNodes
+  : [
+      "https://aniwatch-api-v1-0.onrender.com/api/v2/hianime",
+      "https://aniwatch-api-net.vercel.app/api/v2/hianime",
+      "https://hianime-api-chi.vercel.app/api/v2/hianime",
+      "https://api-aniwatch.onrender.com/api/v2/hianime",
+    ];
 
 export const SERVER_OPTIONS = [
   { id: StreamServer.HD1, name: "HD-1 (VidCloud)" },
