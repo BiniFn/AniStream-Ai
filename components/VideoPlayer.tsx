@@ -85,13 +85,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ sources, subtitles, intro, ou
     const video = videoRef.current;
     if (!video || !sources || sources.length === 0) return;
 
-    // Find M3U8 source preferred
-    const m3u8Source = sources.find(s => s.isM3U8) || sources[0];
+    // Find HLS source when available, otherwise use a direct file source (mp4/mp3/etc)
+    const m3u8Source = sources.find(s => s.isM3U8);
+    const selectedSource = m3u8Source || sources[0];
     
     setIsError(false);
     setQualities([]);
 
-    if (Hls.isSupported()) {
+    if (m3u8Source && Hls.isSupported()) {
       if (hlsRef.current) hlsRef.current.destroy();
       
       const hls = new Hls({
@@ -122,10 +123,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ sources, subtitles, intro, ou
            }
         }
       });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    } else if (m3u8Source && video.canPlayType('application/vnd.apple.mpegurl')) {
       // Safari support
       video.src = m3u8Source.url;
       if (autoplay) video.play();
+    } else if (selectedSource) {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+
+      video.src = selectedSource.url;
+      video.load();
+      if (autoplay) {
+        video.play().catch(() => console.log('Autoplay blocked'));
+      }
     } else {
       setIsError(true);
     }
