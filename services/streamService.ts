@@ -96,12 +96,18 @@ export const fetchStreamSources = async (
     const data = await fetchJson<any>(endpoint);
     
     if (data && Array.isArray(data.sources)) {
+        const isHlsSource = (source: any) => {
+          const sourceType = String(source?.type || '').toLowerCase();
+          const sourceUrl = String(source?.url || '').toLowerCase();
+          return sourceType === 'm3u8' || sourceType === 'hls' || sourceUrl.includes('.m3u8');
+        };
+
         return {
           sources: data.sources.map((s: any) => ({
              url: s.url,
              type: s.type,
-             // API often returns type: "m3u8" or "hls" for HLS streams
-             isM3U8: s.type === 'm3u8' || s.type === 'hls',
+             // API might not always provide reliable type metadata
+             isM3U8: isHlsSource(s),
              quality: s.quality
           })),
           subtitles: data.tracks?.map((t: any) => ({
