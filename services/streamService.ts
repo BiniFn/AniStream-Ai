@@ -1,6 +1,25 @@
 import { STREAM_API_NODES } from "../constants";
 import { SearchResult, StreamEpisode, StreamData, AudioType, StreamServer } from "../types";
 
+const buildUrl = (base: string, endpoint: string) => {
+  // Allow direct API bases and proxy templates:
+  // - https://my-api/api/v2/hianime
+  // - https://corsproxy.io/?{url}
+  if (base.includes('{url}')) {
+    const rawTarget = `${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    return base.replace('{url}', encodeURIComponent(rawTarget));
+  }
+
+  return `${base}${endpoint}`;
+};
+
+const unwrapData = <T>(json: any): T | null => {
+  if (!json) return null;
+  if (json.success && json.data) return json.data as T;
+  if (json.data) return json.data as T;
+  return json as T;
+};
+
 // Helper to handle API responses with fallback nodes
 const fetchJson = async <T>(endpoint: string): Promise<T | null> => {
   let has404 = false;
@@ -10,7 +29,7 @@ const fetchJson = async <T>(endpoint: string): Promise<T | null> => {
     try {
       // Construct URL: If base is a proxy (contains ?), simply append.
       // If endpoint starts with /, it usually works fine with the string concatenation.
-      const url = `${base}${endpoint}`;
+      const url = buildUrl(base, endpoint);
       
       // Timeout increased to 20s because proxies and cold starts can be slow
       const controller = new AbortController();
@@ -33,8 +52,7 @@ const fetchJson = async <T>(endpoint: string): Promise<T | null> => {
       }
 
       const json = await response.json();
-      // Unpack data if wrapped in success/data object, otherwise return generic json
-      return json.success ? json.data : json;
+      return unwrapData<T>(json);
     } catch (error) {
       lastError = error;
       console.warn(`Connection to ${base} failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -55,12 +73,16 @@ export const searchStreamAnime = async (query: string): Promise<SearchResult | n
   try {
     // API expects: /search?q=...
     const endpoint = `/search?q=${encodeURIComponent(query)}`;
-    const data = await fetchJson<{ suggestions?: SearchResult[], animes?: SearchResult[] }>(endpoint);
+    const data = await fetchJson<{
+      suggestions?: SearchResult[];
+      animes?: SearchResult[];
+      results?: SearchResult[];
+    }>(endpoint);
     
     if (!data) return null;
     
     // The API might return 'animes' or 'suggestions'
-    const results = data.animes || data.suggestions || [];
+    const results = data.animes || data.suggestions || data.results || [];
     
     return Array.isArray(results) && results.length > 0 ? results[0] : null;
   } catch (error) {
@@ -73,9 +95,13 @@ export const fetchStreamEpisodes = async (animeId: string): Promise<StreamEpisod
   try {
     // API expects: /anime/{id}/episodes
     const endpoint = `/anime/${animeId}/episodes`;
-    const data = await fetchJson<{ episodes: StreamEpisode[], totalEpisodes: number }>(endpoint);
+    const data = await fetchJson<{
+      episodes?: StreamEpisode[];
+      totalEpisodes?: number;
+      data?: { episodes?: StreamEpisode[] };
+    }>(endpoint);
     
-    const episodes = data?.episodes;
+    const episodes = data?.episodes || data?.data?.episodes;
     
     return Array.isArray(episodes) ? episodes : [];
   } catch (error) {
