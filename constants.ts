@@ -30,7 +30,5 @@ export const AUDIO_TYPES = [
 
 export const NAV_LINKS = [
   { name: "Home", path: "/" },
-  { name: "Trending", path: "/trending" },
-  { name: "Popular", path: "/popular" },
-  { name: "Movies", path: "/movies" },
+  { name: "Search", path: "/search" },
 ];
