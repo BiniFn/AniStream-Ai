@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Menu, X, PlayCircle, Ghost } from 'lucide-react';
 import { NAV_LINKS, APP_NAME } from '../constants';
 
@@ -11,6 +11,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const query = params.get('q') || '';
+    setSearchQuery(query);
+  }, [location.search]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
